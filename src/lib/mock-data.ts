@@ -1,0 +1,29 @@
+export type Customer = {
+  id: string; name: string; initials: string; plan: string; environment: string; browser: string; device: string; issue: string; preview: string; time: string; status: string; tone: string;
+  memory: { issue: string; attempted: string; successful: string; failed: string; preference: string; recurring: string };
+  messages: { role: 'user' | 'assistant'; text: string; time: string }[];
+};
+
+export const customers: [Customer, ...Customer[]] = [
+  { id: 'CUS-1042', name: 'Sarah Wilson', initials: 'SW', plan: 'Enterprise', environment: 'Windows 11', browser: 'Chrome 128', device: 'Desktop', issue: 'CSV upload crashing again', preview: 'The CSV upload seems to be freezing...', time: '2m', status: 'Active', tone: 'mint', memory: { issue: 'Dashboard crashes during CSV upload', attempted: 'Cleared browser cache; tried incognito mode', successful: 'Clearing Chrome cache resolved the upload crash', failed: 'Restarting the browser alone did not help', preference: 'Prefers clear, step-by-step instructions', recurring: 'CSV import instability after browser updates' }, messages: [ { role: 'user', text: 'Hi! The dashboard froze again while I was uploading a CSV. It looks like the same issue as last time.', time: '10:42 AM' }, { role: 'assistant', text: 'Welcome back, Sarah. I remember the CSV upload crash you experienced on Windows 11 in Chrome. Clearing your browser cache fixed it last time. Let’s try that first, step by step:\n\n1. Open Chrome settings and select **Privacy and security**.\n2. Choose **Delete browsing data** and clear cached images and files.\n3. Reload the dashboard and try uploading the CSV again.\n\nI’ll stay here while you try it.', time: '10:43 AM' }, { role: 'user', text: 'Thanks for remembering! I’ll give that a try now.', time: '10:44 AM' } ] },
+  { id: 'CUS-1087', name: 'Alex Johnson', initials: 'AJ', plan: 'Pro', environment: 'macOS Sonoma', browser: 'Safari 17', device: 'MacBook Pro', issue: 'Notification settings not saving', preview: 'My notifications keep turning off...', time: '8m', status: 'Active', tone: 'peach', memory: { issue: 'Email notifications reset unexpectedly', attempted: 'Toggled notifications; signed out and back in', successful: 'Re-authorized notification permissions in Safari', failed: 'Changing account preferences alone did not help', preference: 'Prefers concise answers with screenshots', recurring: 'Safari notification permissions after updates' }, messages: [ { role: 'user', text: 'My notifications keep turning off. Is there a way to fix this?', time: '10:36 AM' }, { role: 'assistant', text: 'Hi Alex. Last time, re-authorizing notification permissions in Safari restored your alerts. Could you check Safari Settings → Websites → Notifications and allow this site?', time: '10:37 AM' } ] },
+  { id: 'CUS-1126', name: 'Michael Chen', initials: 'MC', plan: 'Enterprise', environment: 'Ubuntu 24.04', browser: 'Firefox 130', device: 'Desktop', issue: 'API rate limit during sync', preview: 'Seeing a rate limit warning on sync...', time: '24m', status: 'Pending', tone: 'lavender', memory: { issue: 'Scheduled sync exceeds API rate limits', attempted: 'Retried sync manually; reduced batch size', successful: 'Staggering sync jobs by 15 minutes prevented limits', failed: 'Immediate retries hit the same limit', preference: 'Prefers technical detail and exact steps', recurring: 'Rate limits during end-of-month sync' }, messages: [ { role: 'user', text: 'I’m seeing the rate limit warning again during our scheduled sync.', time: '10:19 AM' }, { role: 'assistant', text: 'I remember we resolved this by staggering sync jobs 15 minutes apart. Has the schedule changed since then?', time: '10:20 AM' } ] },
+  { id: 'CUS-1198', name: 'Priya Sharma', initials: 'PS', plan: 'Growth', environment: 'iOS 18', browser: 'Safari Mobile', device: 'iPhone 15', issue: 'Export link expired', preview: 'The export link has expired again...', time: '1h', status: 'Resolved', tone: 'sky', memory: { issue: 'Export download links expire before opening', attempted: 'Requested a new link; checked junk folder', successful: 'Generating exports directly from the mobile dashboard', failed: 'Opening an older email link remained expired', preference: 'Prefers short mobile-friendly instructions', recurring: 'Expired links when opening email later' }, messages: [ { role: 'user', text: 'The export link has expired again. Can I still get my report?', time: '9:43 AM' }, { role: 'assistant', text: 'Absolutely, Priya. The last fix was generating a fresh export directly from your mobile dashboard. Go to Reports → Export to download it now.', time: '9:44 AM' } ] },
+];
+
+export const activity = [
+  ['Conversation started', 'Sarah reached out about a CSV upload crash', '10:42'],
+  ['Issue identified', 'Matched to a recurring upload issue', '10:42'],
+  ['Memory recalled', 'Windows 11 · Chrome · CSV imports', '10:42'],
+  ['Previous solution identified', 'Clearing browser cache worked before', '10:43'],
+  ['Personalized response generated', 'Step-by-step guidance tailored for Sarah', '10:43'],
+  ['New interaction stored', 'Conversation added to customer history', '10:44'],
+];
+
+export const learning = [
+  { number: '01', title: 'The first signal', text: 'Sarah reports that the dashboard crashes while uploading a CSV.', tag: 'Issue learned' },
+  { number: '02', title: 'Context takes shape', text: 'Sarah shares that she is using Windows 11 and Chrome.', tag: 'Environment learned' },
+  { number: '03', title: 'A solution sticks', text: 'Clearing the browser cache successfully fixes the issue.', tag: 'Solution remembered' },
+  { number: '07', title: 'History becomes helpful', text: 'Sarah returns with a similar issue. Hindsight recalls what worked.', tag: 'Memory recalled' },
+  { number: '12', title: 'Support feels personal', text: 'Responses automatically adapt to Sarah’s preference for step-by-step instructions.', tag: 'Preference applied' },
+];

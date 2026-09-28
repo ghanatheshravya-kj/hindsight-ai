@@ -1,0 +1,3 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { MemoryDashboard } from '@/components/memory-dashboard';
+export const Route = createFileRoute('/analytics')({ head: () => ({ meta: [{ title: 'Analytics | MemorySupport' }, { name: 'description', content: 'Measure memory recall and support outcomes.' }, { property: 'og:title', content: 'Analytics | MemorySupport' }, { property: 'og:description', content: 'Measure memory recall and support outcomes.' }, { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' }] }), component: () => <MemoryDashboard page="Analytics" /> });

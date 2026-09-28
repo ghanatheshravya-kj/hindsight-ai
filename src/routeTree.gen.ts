@@ -10,33 +10,102 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as HindsightMemoryRouteImport } from './routes/hindsight-memory'
+import { Route as LearningTimelineRouteImport } from './routes/learning-timeline'
+import { Route as SupportChatRouteImport } from './routes/support-chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HindsightMemoryRoute = HindsightMemoryRouteImport.update({
+  id: '/hindsight-memory',
+  path: '/hindsight-memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LearningTimelineRoute = LearningTimelineRouteImport.update({
+  id: '/learning-timeline',
+  path: '/learning-timeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportChatRoute = SupportChatRouteImport.update({
+  id: '/support-chat',
+  path: '/support-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/customers': typeof CustomersRoute
+  '/hindsight-memory': typeof HindsightMemoryRoute
+  '/learning-timeline': typeof LearningTimelineRoute
+  '/support-chat': typeof SupportChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/customers': typeof CustomersRoute
+  '/hindsight-memory': typeof HindsightMemoryRoute
+  '/learning-timeline': typeof LearningTimelineRoute
+  '/support-chat': typeof SupportChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
+  '/customers': typeof CustomersRoute
+  '/hindsight-memory': typeof HindsightMemoryRoute
+  '/learning-timeline': typeof LearningTimelineRoute
+  '/support-chat': typeof SupportChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/analytics'
+    | '/customers'
+    | '/hindsight-memory'
+    | '/learning-timeline'
+    | '/support-chat'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/analytics'
+    | '/customers'
+    | '/hindsight-memory'
+    | '/learning-timeline'
+    | '/support-chat'
+  id:
+    | '__root__'
+    | '/'
+    | '/analytics'
+    | '/customers'
+    | '/hindsight-memory'
+    | '/learning-timeline'
+    | '/support-chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
+  CustomersRoute: typeof CustomersRoute
+  HindsightMemoryRoute: typeof HindsightMemoryRoute
+  LearningTimelineRoute: typeof LearningTimelineRoute
+  SupportChatRoute: typeof SupportChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +117,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hindsight-memory': {
+      id: '/hindsight-memory'
+      path: '/hindsight-memory'
+      fullPath: '/hindsight-memory'
+      preLoaderRoute: typeof HindsightMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/learning-timeline': {
+      id: '/learning-timeline'
+      path: '/learning-timeline'
+      fullPath: '/learning-timeline'
+      preLoaderRoute: typeof LearningTimelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support-chat': {
+      id: '/support-chat'
+      path: '/support-chat'
+      fullPath: '/support-chat'
+      preLoaderRoute: typeof SupportChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
+  CustomersRoute: CustomersRoute,
+  HindsightMemoryRoute: HindsightMemoryRoute,
+  LearningTimelineRoute: LearningTimelineRoute,
+  SupportChatRoute: SupportChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
