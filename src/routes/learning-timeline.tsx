@@ -1,0 +1,18 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { MemoryDashboard } from "@/components/memory-dashboard";
+export const Route = createFileRoute("/learning-timeline")({
+  head: () => ({
+    meta: [
+      { title: "Learning Timeline | MemorySupport" },
+      { name: "description", content: "See how customer support becomes more personal over time." },
+      { property: "og:title", content: "Learning Timeline | MemorySupport" },
+      {
+        property: "og:description",
+        content: "See how customer support becomes more personal over time.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: () => <MemoryDashboard page="Learning Timeline" />,
+});
