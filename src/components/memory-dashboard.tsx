@@ -1,88 +1,1008 @@
-import { useMemo, useState } from 'react';
-import { Link, useRouterState } from '@tanstack/react-router';
-import { Activity, ArrowDownRight, ArrowRight, ArrowUpRight, Bell, BrainCircuit, Check, CheckCircle2, ChevronDown, CircleHelp, Clock3, Command, FileClock, Filter, Headphones, LayoutDashboard, LifeBuoy, Menu, MoreHorizontal, Paperclip, Search, Settings2, ShieldCheck, TrendingUp, Users, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ai-elements/conversation';
-import { Message, MessageContent, MessageResponse } from '@/components/ai-elements/message';
-import { PromptInput, PromptInputButton, PromptInputFooter, PromptInputSubmit, PromptInputTextarea, PromptInputTools, usePromptInputAttachments } from '@/components/ai-elements/prompt-input';
-import { customers, activity, learning, type Customer } from '@/lib/mock-data';
-import mark from '@/assets/memory-mark.png';
+import { useMemo, useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  Bell,
+  BrainCircuit,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  CircleHelp,
+  Clock3,
+  Command,
+  FileClock,
+  Filter,
+  Headphones,
+  LayoutDashboard,
+  LifeBuoy,
+  Menu,
+  MoreHorizontal,
+  Paperclip,
+  Search,
+  Settings2,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputButton,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+  usePromptInputAttachments,
+} from "@/components/ai-elements/prompt-input";
+import { customers, activity, learning, type Customer } from "@/lib/mock-data";
+import mark from "@/assets/memory-mark.png";
 
-export type PageName = 'Overview' | 'Customers' | 'Support Chat' | 'Hindsight Memory' | 'Learning Timeline' | 'Analytics';
+export type PageName =
+  | "Overview"
+  | "Customers"
+  | "Support Chat"
+  | "Hindsight Memory"
+  | "Learning Timeline"
+  | "Analytics";
 const nav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard },
-  { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Support Chat', href: '/support-chat', icon: Headphones },
-  { label: 'Hindsight Memory', href: '/hindsight-memory', icon: BrainCircuit },
-  { label: 'Learning Timeline', href: '/learning-timeline', icon: FileClock },
-  { label: 'Analytics', href: '/analytics', icon: Activity },
+  { label: "Overview", href: "/", icon: LayoutDashboard },
+  { label: "Customers", href: "/customers", icon: Users },
+  { label: "Support Chat", href: "/support-chat", icon: Headphones },
+  { label: "Hindsight Memory", href: "/hindsight-memory", icon: BrainCircuit },
+  { label: "Learning Timeline", href: "/learning-timeline", icon: FileClock },
+  { label: "Analytics", href: "/analytics", icon: Activity },
 ] as const;
 const metrics = [
-  { label: 'Total customers', value: '1,284', change: '+12.8%', icon: Users, note: 'vs. last month' },
-  { label: 'Active conversations', value: '38', change: '+6.2%', icon: Headphones, note: 'right now' },
-  { label: 'Memories stored', value: '8,492', change: '+18.4%', icon: BrainCircuit, note: 'vs. last month' },
-  { label: 'Issues resolved', value: '96.2%', change: '+3.1%', icon: CheckCircle2, note: 'resolution rate' },
+  {
+    label: "Total customers",
+    value: "1,284",
+    change: "+12.8%",
+    icon: Users,
+    note: "vs. last month",
+  },
+  {
+    label: "Active conversations",
+    value: "38",
+    change: "+6.2%",
+    icon: Headphones,
+    note: "right now",
+  },
+  {
+    label: "Memories stored",
+    value: "8,492",
+    change: "+18.4%",
+    icon: BrainCircuit,
+    note: "vs. last month",
+  },
+  {
+    label: "Issues resolved",
+    value: "96.2%",
+    change: "+3.1%",
+    icon: CheckCircle2,
+    note: "resolution rate",
+  },
 ];
-const initials = (customer: Customer) => <span className={`avatar avatar-${customer.tone}`}>{customer.initials}</span>;
+const initials = (customer: Customer) => (
+  <span className={`avatar avatar-${customer.tone}`}>{customer.initials}</span>
+);
 
 function AttachmentControl() {
   const attachments = usePromptInputAttachments();
-  return <PromptInputButton aria-label="Attach a file" tooltip="Attach a file" onClick={() => attachments.openFileDialog()}><Paperclip className="size-4" /></PromptInputButton>;
+  return (
+    <PromptInputButton
+      aria-label="Attach a file"
+      tooltip="Attach a file"
+      onClick={() => attachments.openFileDialog()}
+    >
+      <Paperclip className="size-4" />
+    </PromptInputButton>
+  );
 }
 
 export function MemoryDashboard({ page }: { page: PageName }) {
   const [selectedId, setSelectedId] = useState(customers[0].id);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [addedMessages, setAddedMessages] = useState<Record<string, { role: 'user' | 'assistant'; text: string; time: string }[]>>({});
-  const [notice, setNotice] = useState('');
-  const customer = customers.find(c => c.id === selectedId) ?? customers[0];
-  const currentPath = useRouterState({ select: s => s.location.pathname });
-  const filteredCustomers = useMemo(() => customers.filter(c => `${c.name} ${c.issue}`.toLowerCase().includes(query.toLowerCase())), [query]);
-  const flash = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(''), 3500); };
+  const [addedMessages, setAddedMessages] = useState<
+    Record<string, { role: "user" | "assistant"; text: string; time: string }[]>
+  >({});
+  const [notice, setNotice] = useState("");
+  const customer = customers.find((c) => c.id === selectedId) ?? customers[0];
+  const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const filteredCustomers = useMemo(
+    () =>
+      customers.filter(
+        (c) =>
+          `${c.name} ${c.issue}`.toLowerCase().includes(query.toLowerCase()) &&
+          (!activeOnly || c.status === "Active"),
+      ),
+    [query, activeOnly],
+  );
+  const flash = (text: string) => {
+    setNotice(text);
+    window.setTimeout(() => setNotice(""), 3500);
+  };
   const send = ({ text, files }: { text: string; files: { filename?: string }[] }) => {
     if (!text.trim() && !files.length) return;
-    const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    const attachmentNames = files.map(f => f.filename || 'Attachment').join(', ');
-    const content = [text.trim(), attachmentNames && `📎 ${attachmentNames}`].filter(Boolean).join('\n');
-    setAddedMessages(prev => ({ ...prev, [customer.id]: [...(prev[customer.id] ?? []), { role: 'assistant', text: content, time: now }] }));
+    const now = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const attachmentNames = files.map((f) => f.filename || "Attachment").join(", ");
+    const content = [text.trim(), attachmentNames && `📎 ${attachmentNames}`]
+      .filter(Boolean)
+      .join("\n");
+    setAddedMessages((prev) => ({
+      ...prev,
+      [customer.id]: [
+        ...(prev[customer.id] ?? []),
+        { role: "assistant", text: content, time: now },
+      ],
+    }));
   };
-  const openCustomer = (id: string) => { setSelectedId(id); setQuery(''); };
+  const openCustomer = (id: string) => {
+    setSelectedId(id);
+    setQuery("");
+  };
 
-  return <div className="app-shell">
-    <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      <div className="brand"><img src={mark} alt="" width={38} height={38} /><span>memory<span className="brand-light">support</span><small>WORKSPACE</small></span><Button variant="ghost" size="icon" className="mobile-close" aria-label="Close menu" onClick={() => setSidebarOpen(false)}><X /></Button></div>
-      <div className="workspace-select"><span className="workspace-icon">M</span><span className="workspace-name">Meridian Studio <small>Enterprise workspace</small></span><ChevronDown className="size-4 text-muted-foreground" /></div>
-      <div className="nav-caption">WORKSPACE</div>
-      <nav className="nav-list" aria-label="Main navigation">{nav.map(item => <Link key={item.href} to={item.href} onClick={() => setSidebarOpen(false)} className={`nav-item ${currentPath === item.href ? 'nav-active' : ''}`}><item.icon className="size-[18px]" strokeWidth={1.9}/><span>{item.label}</span>{item.label === 'Support Chat' && <span className="nav-count">4</span>}</Link>)}</nav>
-      <div className="sidebar-bottom"><div className="sidebar-help"><div className="help-icon"><BrainCircuit className="size-5" /></div><strong>Make every conversation count.</strong><p>Hindsight keeps the context so your team can focus on the person.</p><Link to="/hindsight-memory">Explore memory <ArrowRight className="size-3.5" /></Link></div><div className="sidebar-links"><span><CircleHelp className="size-4" /> Help & support</span><span><Settings2 className="size-4" /> Settings</span></div><div className="account"><span className="avatar avatar-agent">JD</span><span><strong>Jamie Davis</strong><small>Workspace admin</small></span><MoreHorizontal className="size-4 text-muted-foreground ml-auto" /></div></div>
-    </aside>
-    {sidebarOpen && <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />}
-    <main className="main-area">
-      <header className="topbar"><div className="topbar-left"><Button variant="ghost" size="icon" className="menu-trigger" aria-label="Open menu" onClick={() => setSidebarOpen(true)}><Menu /></Button><span className="breadcrumb">Workspace</span><span className="crumb-slash">/</span><strong>{page}</strong></div><div className="topbar-actions"><span className="system-status"><span className="live-dot" /> All systems operational</span><Button variant="ghost" size="icon" aria-label="Notifications" onClick={() => flash('You’re all caught up on notifications.')}><Bell className="size-[18px]" /></Button><span className="avatar avatar-agent avatar-small">JD</span></div></header>
-      {notice && <div role="status" className="toast"><Check className="size-4" />{notice}</div>}
-      <div className="page-body">
-        {page === 'Overview' && <>
-          <div className="page-heading overview-heading"><div><div className="eyebrow"><span className="live-dot"/> MONDAY, SEPTEMBER 28, 2026</div><h1>Good morning, Jamie <span className="wave">✳</span></h1><p>Here’s what’s happening with your customers today.</p></div><Button variant="outline" className="date-button"><Clock3 className="size-4"/> Last 30 days <ChevronDown className="size-4" /></Button></div>
-          <div className="metrics-grid">{metrics.map((metric, i) => <div className="metric-card" key={metric.label}><div className="metric-top"><span>{metric.label}</span><span className={`metric-icon ${i === 2 ? 'metric-icon-memory' : ''}`}><metric.icon className="size-[19px]" /></span></div><div className="metric-value">{metric.value}</div><div className="metric-bottom"><span className="metric-change"><ArrowUpRight className="size-3.5" />{metric.change}</span><span>{metric.note}</span></div></div>)}</div>
-          <div className="overview-grid"><section className="section-panel conversations-panel"><div className="section-heading"><div><h2>Recent conversations</h2><p>Pick up where you left off</p></div><Link className="text-link" to="/support-chat">View all <ArrowRight className="size-4"/></Link></div><div className="recent-list">{customers.map(c => <Link to="/support-chat" key={c.id} className="recent-row"><span>{initials(c)}</span><div className="recent-main"><strong>{c.name}</strong><span>{c.issue}</span></div><span className={`status-pill status-${c.status.toLowerCase()}`}>{c.status}</span><span className="recent-time">{c.time} ago</span><ArrowRight className="size-4 row-arrow" /></Link>)}</div></section><section className="section-panel activity-panel"><div className="section-heading"><div><h2>Memory activity</h2><p>Hindsight at work, in real time</p></div><span className="activity-live"><span className="live-dot" /> Live</span></div><div className="mini-timeline">{activity.slice(0,5).map(([title, detail, time], i) => <div className="mini-event" key={title}><span className={`timeline-icon ${i === 2 ? 'timeline-icon-featured' : ''}`}>{i === 2 ? <BrainCircuit className="size-4"/> : i === 3 ? <Check className="size-4"/> : <span className="size-1.5 rounded-full bg-current" />}</span><div><strong>{title}</strong><p>{detail}</p></div><time>{time}</time></div>)}</div><Link to="/hindsight-memory" className="activity-footer">See how memory works <ArrowRight className="size-4" /></Link></section></div>
-          <Comparison />
-        </>}
-        {page === 'Support Chat' && <><PageHeading eyebrow="INBOX / LIVE SUPPORT" title="Support Chat" description="Every conversation, with the full story already in view." extra={<span className="heading-badge"><span className="live-dot"/> 2 active conversations</span>} /><div className="chat-layout"><section className="chat-customer-list"><div className="chat-list-head"><div><h2>Conversations</h2><span>4 total</span></div><Button variant="ghost" size="icon" aria-label="Filter conversations" title="Filter conversations" onClick={() => flash('Showing all conversations.')}><Filter className="size-4"/></Button></div><div className="search-wrap"><Search className="size-4"/><Input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search conversations" aria-label="Search conversations" /></div><div className="conversation-items">{filteredCustomers.length ? filteredCustomers.map(c => <Button variant="ghost" key={c.id} onClick={() => openCustomer(c.id)} className={`conversation-item ${customer.id === c.id ? 'conversation-selected' : ''}`}><span>{initials(c)}</span><span className="conversation-summary"><span className="conversation-name">{c.name}<small>{c.time}</small></span><strong>{c.issue}</strong><span className="conversation-preview">{c.preview}</span></span></Button>) : <p className="empty-search">No conversations found.</p>}</div></section>
-          <section className="chat-center"><div className="chat-header"><div className="chat-heading-person">{initials(customer)}<span><strong>{customer.name}</strong><small><span className="live-dot" /> {customer.status === 'Resolved' ? 'Resolved conversation' : 'Conversation in progress'} · {customer.plan} plan</small></span></div><Button variant="ghost" size="icon" title="Conversation options" aria-label="Conversation options" onClick={() => flash('This is a demo conversation.')}><MoreHorizontal className="size-5" /></Button></div><div className="chat-memory-banner"><span className="banner-icon"><BrainCircuit className="size-4" /></span><div><strong>Hindsight remembers {customer.name.split(' ')[0]}</strong><span>Past issues, solutions and preferences are ready for this conversation.</span></div><Check className="size-4 ml-auto" /></div><Conversation className="chat-transcript"><ConversationContent className="chat-transcript-content"><div className="chat-day">TODAY</div>{[...customer.messages, ...(addedMessages[customer.id] ?? [])].map((message, i) => <div key={`${customer.id}-${i}`} className={`chat-message-row ${message.role === 'assistant' ? 'agent-row' : 'customer-row'}`}>
-          {message.role === 'assistant' && <span className="agent-symbol"><img src={mark} alt="MemorySupport agent" width={24} height={24} /></span>}
-          <div className="chat-message-group"><div className="message-author">{message.role === 'assistant' ? 'MemorySupport AI' : customer.name}<time>{message.time}</time></div><Message from={message.role}><MessageContent className={message.role === 'user' ? 'customer-bubble' : 'agent-message'}><MessageResponse>{message.text}</MessageResponse></MessageContent></Message></div></div>)}<div className="typing-row"><span className="agent-symbol"><img src={mark} alt="" width={24} height={24} /></span><span className="typing-dots"><i/><i/><i/></span><span>AI assistant is ready</span></div></ConversationContent><ConversationScrollButton /></Conversation><div className="chat-composer"><PromptInput onSubmit={send} multiple><PromptInputTextarea placeholder={`Reply to ${customer.name.split(' ')[0]}...`} aria-label="Write a reply" /><PromptInputFooter><PromptInputTools><AttachmentControl /><span className="composer-hint">Reply as MemorySupport AI</span></PromptInputTools><PromptInputSubmit aria-label="Send message" status="ready" /></PromptInputFooter></PromptInput><div className="composer-footnote"><ShieldCheck className="size-3.5"/> Demo mode · Replies stay in this session</div></div></section>
-          <MemoryPanel customer={customer} /></div></>}
-        {page === 'Customers' && <><PageHeading eyebrow="YOUR CUSTOMERS" title="Customers" description="Every relationship, with its context intact." extra={<span className="heading-badge">1,284 customers</span>} /><div className="customer-toolbar"><div className="search-wrap customer-search"><Search className="size-4"/><Input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search customers" aria-label="Search customers"/></div><span className="heading-badge">Showing demo customers</span></div><div className="customer-table"><div className="table-head"><span>Customer</span><span>Current issue</span><span>Plan</span><span>Memories</span><span>Status</span><span></span></div>{filteredCustomers.map(c => <Link to="/support-chat" key={c.id} className="table-row"><span className="table-person">{initials(c)}<span><strong>{c.name}</strong><small>{c.id}</small></span></span><span className="table-issue">{c.issue}</span><span>{c.plan}</span><span><BrainCircuit className="size-4 text-primary inline mr-1.5" />{c.id === 'CUS-1042' ? '12' : c.id === 'CUS-1087' ? '8' : c.id === 'CUS-1126' ? '15' : '6'}</span><span><span className={`status-pill status-${c.status.toLowerCase()}`}>{c.status}</span></span><ArrowRight className="size-4 text-muted-foreground" /></Link>)}</div></>}
-        {page === 'Hindsight Memory' && <><PageHeading eyebrow="THE DIFFERENCE IS CONTEXT" title="Hindsight Memory" description="What customers have shared before makes every next answer better." extra={<span className="heading-badge"><BrainCircuit className="size-4"/> 8,492 memories stored</span>} /><div className="memory-feature"><div><span className="feature-label"><span className="live-dot"/> PERSISTENT CUSTOMER CONTEXT</span><h2>Support that picks up<br/>where you left off.</h2><p>Hindsight connects issues, environments, attempted fixes and preferences into a useful picture of each customer.</p><Link to="/support-chat" className="feature-link">See it in a conversation <ArrowUpRight className="size-4"/></Link></div><div className="memory-orbit"><div className="orbit-ring orbit-outer"/><div className="orbit-ring orbit-inner"/><img src={mark} alt="MemorySupport memory symbol" width={116} height={116}/><span className="orbit-label orbit-label-one">Preferences</span><span className="orbit-label orbit-label-two">Solutions</span><span className="orbit-label orbit-label-three">History</span></div></div><Comparison /><div className="memory-page-grid"><MemoryPanel customer={customer} expanded /><section className="section-panel memory-process"><div className="section-heading"><div><h2>Memory activity</h2><p>How context became a better answer for Sarah</p></div></div><div className="process-list">{activity.map(([title, detail, time], i) => <div className="process-item" key={title}><span className="process-number">{String(i+1).padStart(2,'0')}</span><div><strong>{title}</strong><p>{detail}</p></div><time>{time}</time></div>)}</div></section></div></>}
-        {page === 'Learning Timeline' && <><PageHeading eyebrow="PERSONALIZATION OVER TIME" title="Learning Timeline" description="Watch how each interaction adds to a more helpful customer experience."/><div className="learning-intro"><span className="feature-label"><span className="live-dot"/> SARAH WILSON’S STORY</span><h2>From first question to familiar conversation.</h2><p>Good support doesn’t start over. Each moment adds a detail that makes the next one easier.</p></div><div className="learning-line">{learning.map((event, i) => <div className="learning-event" key={event.number}><div className="learning-track"><span className={`learning-node ${i === learning.length-1 ? 'learning-node-last' : ''}`}>{event.number}</span></div><div className="learning-detail"><span className="learning-step">INTERACTION {event.number}</span><h3>{event.title}</h3><p>{event.text}</p><span className="learning-tag"><Check className="size-3"/>{event.tag}</span></div></div>)}</div><Comparison /></>}
-        {page === 'Analytics' && <><PageHeading eyebrow="WORKSPACE INSIGHTS" title="Analytics" description="A clearer view of the impact memory makes." extra={<span className="heading-badge"><Clock3 className="size-4"/> Last 30 days</span>} /><div className="analytics-grid">{[{label:'Memories created',value:'2,148',delta:'+18.4%',icon:BrainCircuit},{label:'Memories recalled',value:'6,320',delta:'+24.1%',icon:Command},{label:'Repeat issues',value:'184',delta:'−8.2%',icon:ArrowDownRight},{label:'Successful solutions',value:'1,072',delta:'+12.6%',icon:CheckCircle2},{label:'Avg. resolution time',value:'4m 32s',delta:'−22.5%',icon:Clock3},{label:'Personalization events',value:'3,856',delta:'+31.2%',icon:TrendingUp}].map(item => <div className="metric-card analytics-metric" key={item.label}><div className="metric-top"><span>{item.label}</span><span className="metric-icon"><item.icon className="size-[19px]"/></span></div><div className="metric-value">{item.value}</div><div className="metric-bottom"><span className="metric-change">{item.delta}</span><span>vs. last month</span></div></div>)}</div><div className="analytics-lower"><section className="section-panel insight-panel"><div className="section-heading"><div><h2>Memory impact</h2><p>More context, faster resolutions</p></div></div><div className="bar-chart">{[['Mon',48,72],['Tue',55,78],['Wed',53,82],['Thu',62,85],['Fri',58,89],['Sat',65,92],['Sun',70,96]].map(([day, a, b]) => <div className="bar-group" key={day}><div className="bars"><span style={{height:`${a}%`}}/><span style={{height:`${b}%`}}/></div><small>{day}</small></div>)}</div><div className="chart-legend"><span><i className="legend-light"/> Without recall</span><span><i className="legend-dark"/> With recall</span></div></section><section className="section-panel insight-side"><div className="section-heading"><div><h2>At a glance</h2><p>What improved this month</p></div></div><div className="insight-highlight"><span className="insight-icon"><BrainCircuit className="size-5" /></span><strong>72% of repeat issues resolved using a recalled memory</strong><p>Fewer repeated questions. More time spent solving what matters.</p></div><div className="insight-stat"><span>Customer satisfaction</span><strong>98.4% <ArrowUpRight className="size-4"/></strong></div><div className="insight-stat"><span>First-response resolution</span><strong>81.2% <ArrowUpRight className="size-4"/></strong></div></section></div></>}
-      </div>
-    </main>
-  </div>;
+  return (
+    <div className="app-shell">
+      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
+        <div className="brand">
+          <img src={mark} alt="" width={38} height={38} />
+          <span>
+            memory<span className="brand-light">support</span>
+            <small>WORKSPACE</small>
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mobile-close"
+            aria-label="Close menu"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X />
+          </Button>
+        </div>
+        <div className="workspace-select">
+          <span className="workspace-icon">M</span>
+          <span className="workspace-name">
+            Meridian Studio <small>Enterprise workspace</small>
+          </span>
+          <ChevronDown className="size-4 text-muted-foreground" />
+        </div>
+        <div className="nav-caption">WORKSPACE</div>
+        <nav className="nav-list" aria-label="Main navigation">
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={() => setSidebarOpen(false)}
+              className={`nav-item ${currentPath === item.href ? "nav-active" : ""}`}
+            >
+              <item.icon className="size-[18px]" strokeWidth={1.9} />
+              <span>{item.label}</span>
+              {item.label === "Support Chat" && <span className="nav-count">4</span>}
+            </Link>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="sidebar-help">
+            <div className="help-icon">
+              <BrainCircuit className="size-5" />
+            </div>
+            <strong>Make every conversation count.</strong>
+            <p>Hindsight keeps the context so your team can focus on the person.</p>
+            <Link to="/hindsight-memory">
+              Explore memory <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+          <div className="sidebar-links">
+            <span>
+              <CircleHelp className="size-4" /> Help & support
+            </span>
+            <span>
+              <Settings2 className="size-4" /> Settings
+            </span>
+          </div>
+          <div className="account">
+            <span className="avatar avatar-agent">JD</span>
+            <span>
+              <strong>Jamie Davis</strong>
+              <small>Workspace admin</small>
+            </span>
+            <MoreHorizontal className="size-4 text-muted-foreground ml-auto" />
+          </div>
+        </div>
+      </aside>
+      {sidebarOpen && <div className="sidebar-scrim" onClick={() => setSidebarOpen(false)} />}
+      <main className="main-area">
+        <header className="topbar">
+          <div className="topbar-left">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="menu-trigger"
+              aria-label="Open menu"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu />
+            </Button>
+            <span className="breadcrumb">Workspace</span>
+            <span className="crumb-slash">/</span>
+            <strong>{page}</strong>
+          </div>
+          <div className="topbar-actions">
+            <span className="system-status">
+              <span className="live-dot" /> All systems operational
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Notifications"
+              onClick={() => flash("You’re all caught up on notifications.")}
+            >
+              <Bell className="size-[18px]" />
+            </Button>
+            <span className="avatar avatar-agent avatar-small">JD</span>
+          </div>
+        </header>
+        {notice && (
+          <div role="status" className="toast">
+            <Check className="size-4" />
+            {notice}
+          </div>
+        )}
+        <div className="page-body">
+          {page === "Overview" && (
+            <>
+              <div className="page-heading overview-heading">
+                <div>
+                  <div className="eyebrow">
+                    <span className="live-dot" /> MONDAY, SEPTEMBER 28, 2026
+                  </div>
+                  <h1>
+                    Good morning, Jamie <span className="wave">✳</span>
+                  </h1>
+                  <p>Here’s what’s happening with your customers today.</p>
+                </div>
+                <Button variant="outline" className="date-button">
+                  <Clock3 className="size-4" /> Last 30 days <ChevronDown className="size-4" />
+                </Button>
+              </div>
+              <div className="metrics-grid">
+                {metrics.map((metric, i) => (
+                  <div className="metric-card" key={metric.label}>
+                    <div className="metric-top">
+                      <span>{metric.label}</span>
+                      <span className={`metric-icon ${i === 2 ? "metric-icon-memory" : ""}`}>
+                        <metric.icon className="size-[19px]" />
+                      </span>
+                    </div>
+                    <div className="metric-value">{metric.value}</div>
+                    <div className="metric-bottom">
+                      <span className="metric-change">
+                        <ArrowUpRight className="size-3.5" />
+                        {metric.change}
+                      </span>
+                      <span>{metric.note}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="overview-grid">
+                <section className="section-panel conversations-panel">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Recent conversations</h2>
+                      <p>Pick up where you left off</p>
+                    </div>
+                    <Link className="text-link" to="/support-chat">
+                      View all <ArrowRight className="size-4" />
+                    </Link>
+                  </div>
+                  <div className="recent-list">
+                    {customers.map((c) => (
+                      <Link to="/support-chat" key={c.id} className="recent-row">
+                        <span>{initials(c)}</span>
+                        <div className="recent-main">
+                          <strong>{c.name}</strong>
+                          <span>{c.issue}</span>
+                        </div>
+                        <span className={`status-pill status-${c.status.toLowerCase()}`}>
+                          {c.status}
+                        </span>
+                        <span className="recent-time">{c.time} ago</span>
+                        <ArrowRight className="size-4 row-arrow" />
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+                <section className="section-panel activity-panel">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Memory activity</h2>
+                      <p>Hindsight at work, in real time</p>
+                    </div>
+                    <span className="activity-live">
+                      <span className="live-dot" /> Live
+                    </span>
+                  </div>
+                  <div className="mini-timeline">
+                    {activity.slice(0, 5).map(([title, detail, time], i) => (
+                      <div className="mini-event" key={title}>
+                        <span
+                          className={`timeline-icon ${i === 2 ? "timeline-icon-featured" : ""}`}
+                        >
+                          {i === 2 ? (
+                            <BrainCircuit className="size-4" />
+                          ) : i === 3 ? (
+                            <Check className="size-4" />
+                          ) : (
+                            <span className="size-1.5 rounded-full bg-current" />
+                          )}
+                        </span>
+                        <div>
+                          <strong>{title}</strong>
+                          <p>{detail}</p>
+                        </div>
+                        <time>{time}</time>
+                      </div>
+                    ))}
+                  </div>
+                  <Link to="/hindsight-memory" className="activity-footer">
+                    See how memory works <ArrowRight className="size-4" />
+                  </Link>
+                </section>
+              </div>
+              <Comparison />
+            </>
+          )}
+          {page === "Support Chat" && (
+            <>
+              <PageHeading
+                eyebrow="INBOX / LIVE SUPPORT"
+                title="Support Chat"
+                description="Every conversation, with the full story already in view."
+                extra={
+                  <span className="heading-badge">
+                    <span className="live-dot" /> 2 active conversations
+                  </span>
+                }
+              />
+              <div className="chat-layout">
+                <section className="chat-customer-list">
+                  <div className="chat-list-head">
+                    <div>
+                      <h2>Conversations</h2>
+                      <span>4 total</span>
+                    </div>
+                    <Button
+                      variant={activeOnly ? "secondary" : "ghost"}
+                      size="icon"
+                      aria-label={
+                        activeOnly ? "Show all conversations" : "Show active conversations"
+                      }
+                      title={activeOnly ? "Show all conversations" : "Show active conversations"}
+                      onClick={() => setActiveOnly((value) => !value)}
+                    >
+                      <Filter className="size-4" />
+                    </Button>
+                  </div>
+                  <div className="search-wrap">
+                    <Search className="size-4" />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search conversations"
+                      aria-label="Search conversations"
+                    />
+                  </div>
+                  <div className="conversation-items">
+                    {filteredCustomers.length ? (
+                      filteredCustomers.map((c) => (
+                        <Button
+                          variant="ghost"
+                          key={c.id}
+                          onClick={() => openCustomer(c.id)}
+                          className={`conversation-item ${customer.id === c.id ? "conversation-selected" : ""}`}
+                        >
+                          <span>{initials(c)}</span>
+                          <span className="conversation-summary">
+                            <span className="conversation-name">
+                              {c.name}
+                              <small>{c.time}</small>
+                            </span>
+                            <strong>{c.issue}</strong>
+                            <span className="conversation-preview">{c.preview}</span>
+                          </span>
+                        </Button>
+                      ))
+                    ) : (
+                      <p className="empty-search">No conversations found.</p>
+                    )}
+                  </div>
+                </section>
+                <section className="chat-center">
+                  <div className="chat-header">
+                    <div className="chat-heading-person">
+                      {initials(customer)}
+                      <span>
+                        <strong>{customer.name}</strong>
+                        <small>
+                          <span className="live-dot" />{" "}
+                          {customer.status === "Resolved"
+                            ? "Resolved conversation"
+                            : "Conversation in progress"}{" "}
+                          · {customer.plan} plan
+                        </small>
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Conversation options"
+                      aria-label="Conversation options"
+                      onClick={() => flash("This is a demo conversation.")}
+                    >
+                      <MoreHorizontal className="size-5" />
+                    </Button>
+                  </div>
+                  <div className="chat-memory-banner">
+                    <span className="banner-icon">
+                      <BrainCircuit className="size-4" />
+                    </span>
+                    <div>
+                      <strong>Hindsight remembers {customer.name.split(" ")[0]}</strong>
+                      <span>
+                        Past issues, solutions and preferences are ready for this conversation.
+                      </span>
+                    </div>
+                    <Check className="size-4 ml-auto" />
+                  </div>
+                  <Conversation className="chat-transcript">
+                    <ConversationContent className="chat-transcript-content">
+                      <div className="chat-day">TODAY</div>
+                      {[...customer.messages, ...(addedMessages[customer.id] ?? [])].map(
+                        (message, i) => (
+                          <div
+                            key={`${customer.id}-${i}`}
+                            className={`chat-message-row ${message.role === "assistant" ? "agent-row" : "customer-row"}`}
+                          >
+                            {message.role === "assistant" && (
+                              <span className="agent-symbol">
+                                <img src={mark} alt="MemorySupport agent" width={24} height={24} />
+                              </span>
+                            )}
+                            <div className="chat-message-group">
+                              <div className="message-author">
+                                {message.role === "assistant" ? "MemorySupport AI" : customer.name}
+                                <time>{message.time}</time>
+                              </div>
+                              <Message from={message.role}>
+                                <MessageContent
+                                  className={
+                                    message.role === "user" ? "customer-bubble" : "agent-message"
+                                  }
+                                >
+                                  <MessageResponse>{message.text}</MessageResponse>
+                                </MessageContent>
+                              </Message>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                      <div className="typing-row">
+                        <span className="agent-symbol">
+                          <img src={mark} alt="" width={24} height={24} />
+                        </span>
+                        <span className="typing-dots">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                        <span>AI assistant is ready</span>
+                      </div>
+                    </ConversationContent>
+                    <ConversationScrollButton />
+                  </Conversation>
+                  <div className="chat-composer">
+                    <PromptInput onSubmit={send} multiple>
+                      <PromptInputTextarea
+                        placeholder={`Reply to ${customer.name.split(" ")[0]}...`}
+                        aria-label="Write a reply"
+                      />
+                      <PromptInputFooter>
+                        <PromptInputTools>
+                          <AttachmentControl />
+                          <span className="composer-hint">Reply as MemorySupport AI</span>
+                        </PromptInputTools>
+                        <PromptInputSubmit aria-label="Send message" status="ready" />
+                      </PromptInputFooter>
+                    </PromptInput>
+                    <div className="composer-footnote">
+                      <ShieldCheck className="size-3.5" /> Demo mode · Replies stay in this session
+                    </div>
+                  </div>
+                </section>
+                <MemoryPanel customer={customer} />
+              </div>
+            </>
+          )}
+          {page === "Customers" && (
+            <>
+              <PageHeading
+                eyebrow="YOUR CUSTOMERS"
+                title="Customers"
+                description="Every relationship, with its context intact."
+                extra={<span className="heading-badge">1,284 customers</span>}
+              />
+              <div className="customer-toolbar">
+                <div className="search-wrap customer-search">
+                  <Search className="size-4" />
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search customers"
+                    aria-label="Search customers"
+                  />
+                </div>
+                <span className="heading-badge">Showing demo customers</span>
+              </div>
+              <div className="customer-table">
+                <div className="table-head">
+                  <span>Customer</span>
+                  <span>Current issue</span>
+                  <span>Plan</span>
+                  <span>Memories</span>
+                  <span>Status</span>
+                  <span></span>
+                </div>
+                {filteredCustomers.map((c) => (
+                  <Link to="/support-chat" key={c.id} className="table-row">
+                    <span className="table-person">
+                      {initials(c)}
+                      <span>
+                        <strong>{c.name}</strong>
+                        <small>{c.id}</small>
+                      </span>
+                    </span>
+                    <span className="table-issue">{c.issue}</span>
+                    <span>{c.plan}</span>
+                    <span>
+                      <BrainCircuit className="size-4 text-primary inline mr-1.5" />
+                      {c.id === "CUS-1042"
+                        ? "12"
+                        : c.id === "CUS-1087"
+                          ? "8"
+                          : c.id === "CUS-1126"
+                            ? "15"
+                            : "6"}
+                    </span>
+                    <span>
+                      <span className={`status-pill status-${c.status.toLowerCase()}`}>
+                        {c.status}
+                      </span>
+                    </span>
+                    <ArrowRight className="size-4 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
+          {page === "Hindsight Memory" && (
+            <>
+              <PageHeading
+                eyebrow="THE DIFFERENCE IS CONTEXT"
+                title="Hindsight Memory"
+                description="What customers have shared before makes every next answer better."
+                extra={
+                  <span className="heading-badge">
+                    <BrainCircuit className="size-4" /> 8,492 memories stored
+                  </span>
+                }
+              />
+              <div className="memory-feature">
+                <div>
+                  <span className="feature-label">
+                    <span className="live-dot" /> PERSISTENT CUSTOMER CONTEXT
+                  </span>
+                  <h2>
+                    Support that picks up
+                    <br />
+                    where you left off.
+                  </h2>
+                  <p>
+                    Hindsight connects issues, environments, attempted fixes and preferences into a
+                    useful picture of each customer.
+                  </p>
+                  <Link to="/support-chat" className="feature-link">
+                    See it in a conversation <ArrowUpRight className="size-4" />
+                  </Link>
+                </div>
+                <div className="memory-orbit">
+                  <div className="orbit-ring orbit-outer" />
+                  <div className="orbit-ring orbit-inner" />
+                  <img src={mark} alt="MemorySupport memory symbol" width={116} height={116} />
+                  <span className="orbit-label orbit-label-one">Preferences</span>
+                  <span className="orbit-label orbit-label-two">Solutions</span>
+                  <span className="orbit-label orbit-label-three">History</span>
+                </div>
+              </div>
+              <Comparison />
+              <div className="memory-page-grid">
+                <MemoryPanel customer={customer} expanded />
+                <section className="section-panel memory-process">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Memory activity</h2>
+                      <p>How context became a better answer for Sarah</p>
+                    </div>
+                  </div>
+                  <div className="process-list">
+                    {activity.map(([title, detail, time], i) => (
+                      <div className="process-item" key={title}>
+                        <span className="process-number">{String(i + 1).padStart(2, "0")}</span>
+                        <div>
+                          <strong>{title}</strong>
+                          <p>{detail}</p>
+                        </div>
+                        <time>{time}</time>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+          {page === "Learning Timeline" && (
+            <>
+              <PageHeading
+                eyebrow="PERSONALIZATION OVER TIME"
+                title="Learning Timeline"
+                description="Watch how each interaction adds to a more helpful customer experience."
+              />
+              <div className="learning-intro">
+                <span className="feature-label">
+                  <span className="live-dot" /> SARAH WILSON’S STORY
+                </span>
+                <h2>From first question to familiar conversation.</h2>
+                <p>
+                  Good support doesn’t start over. Each moment adds a detail that makes the next one
+                  easier.
+                </p>
+              </div>
+              <div className="learning-line">
+                {learning.map((event, i) => (
+                  <div className="learning-event" key={event.number}>
+                    <div className="learning-track">
+                      <span
+                        className={`learning-node ${i === learning.length - 1 ? "learning-node-last" : ""}`}
+                      >
+                        {event.number}
+                      </span>
+                    </div>
+                    <div className="learning-detail">
+                      <span className="learning-step">INTERACTION {event.number}</span>
+                      <h3>{event.title}</h3>
+                      <p>{event.text}</p>
+                      <span className="learning-tag">
+                        <Check className="size-3" />
+                        {event.tag}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Comparison />
+            </>
+          )}
+          {page === "Analytics" && (
+            <>
+              <PageHeading
+                eyebrow="WORKSPACE INSIGHTS"
+                title="Analytics"
+                description="A clearer view of the impact memory makes."
+                extra={
+                  <span className="heading-badge">
+                    <Clock3 className="size-4" /> Last 30 days
+                  </span>
+                }
+              />
+              <div className="analytics-grid">
+                {[
+                  {
+                    label: "Memories created",
+                    value: "2,148",
+                    delta: "+18.4%",
+                    icon: BrainCircuit,
+                  },
+                  { label: "Memories recalled", value: "6,320", delta: "+24.1%", icon: Command },
+                  { label: "Repeat issues", value: "184", delta: "−8.2%", icon: ArrowDownRight },
+                  {
+                    label: "Successful solutions",
+                    value: "1,072",
+                    delta: "+12.6%",
+                    icon: CheckCircle2,
+                  },
+                  { label: "Avg. resolution time", value: "4m 32s", delta: "−22.5%", icon: Clock3 },
+                  {
+                    label: "Personalization events",
+                    value: "3,856",
+                    delta: "+31.2%",
+                    icon: TrendingUp,
+                  },
+                ].map((item) => (
+                  <div className="metric-card analytics-metric" key={item.label}>
+                    <div className="metric-top">
+                      <span>{item.label}</span>
+                      <span className="metric-icon">
+                        <item.icon className="size-[19px]" />
+                      </span>
+                    </div>
+                    <div className="metric-value">{item.value}</div>
+                    <div className="metric-bottom">
+                      <span className="metric-change">{item.delta}</span>
+                      <span>vs. last month</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="analytics-lower">
+                <section className="section-panel insight-panel">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Memory impact</h2>
+                      <p>More context, faster resolutions</p>
+                    </div>
+                  </div>
+                  <div className="bar-chart">
+                    {[
+                      ["Mon", 48, 72],
+                      ["Tue", 55, 78],
+                      ["Wed", 53, 82],
+                      ["Thu", 62, 85],
+                      ["Fri", 58, 89],
+                      ["Sat", 65, 92],
+                      ["Sun", 70, 96],
+                    ].map(([day, a, b]) => (
+                      <div className="bar-group" key={day}>
+                        <div className="bars">
+                          <span style={{ height: `${a}%` }} />
+                          <span style={{ height: `${b}%` }} />
+                        </div>
+                        <small>{day}</small>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="chart-legend">
+                    <span>
+                      <i className="legend-light" /> Without recall
+                    </span>
+                    <span>
+                      <i className="legend-dark" /> With recall
+                    </span>
+                  </div>
+                </section>
+                <section className="section-panel insight-side">
+                  <div className="section-heading">
+                    <div>
+                      <h2>At a glance</h2>
+                      <p>What improved this month</p>
+                    </div>
+                  </div>
+                  <div className="insight-highlight">
+                    <span className="insight-icon">
+                      <BrainCircuit className="size-5" />
+                    </span>
+                    <strong>72% of repeat issues resolved using a recalled memory</strong>
+                    <p>Fewer repeated questions. More time spent solving what matters.</p>
+                  </div>
+                  <div className="insight-stat">
+                    <span>Customer satisfaction</span>
+                    <strong>
+                      98.4% <ArrowUpRight className="size-4" />
+                    </strong>
+                  </div>
+                  <div className="insight-stat">
+                    <span>First-response resolution</span>
+                    <strong>
+                      81.2% <ArrowUpRight className="size-4" />
+                    </strong>
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }
 
-function PageHeading({ eyebrow, title, description, extra }: { eyebrow: string; title: string; description: string; extra?: React.ReactNode }) { return <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{description}</p></div>{extra}</div>; }
-function Comparison() { return <section className="comparison-section"><div className="section-heading"><div><span className="eyebrow">WHY MEMORY MATTERS</span><h2>The difference is remembering.</h2><p>The same customer. The same issue. A completely different experience.</p></div></div><div className="comparison-grid"><div className="compare-panel compare-without"><span className="compare-label"><X className="size-4"/> WITHOUT MEMORY</span><p>“Please tell me your operating system and what you have already tried.”</p><span className="compare-foot">Starting from scratch, every time</span></div><div className="compare-panel compare-with"><span className="compare-label"><BrainCircuit className="size-4"/> WITH HINDSIGHT</span><p>“Welcome back, Sarah. I remember you previously experienced a CSV upload crash on Windows 11 using Chrome, and clearing your browser cache resolved it. Let’s try that first.”</p><span className="compare-foot"><Check className="size-4"/> Context that actually helps</span></div></div></section>; }
-function MemoryPanel({ customer, expanded = false }: { customer: Customer; expanded?: boolean }) { return <aside className={`memory-panel ${expanded ? 'memory-expanded' : ''}`}><div className="memory-header"><div className="memory-heading"><span className="memory-heading-icon"><BrainCircuit className="size-5" /></span><span><strong>Hindsight Memory</strong><small>Customer context, in one place</small></span></div><span className="memory-active"><span className="live-dot"/> ACTIVE</span></div><div className="memory-scroll"><div className="memory-section"><div className="memory-section-title">CUSTOMER PROFILE</div><div className="memory-person">{initials(customer)}<span><strong>{customer.name}</strong><small>{customer.id}</small></span><span className="memory-plan">{customer.plan}</span></div><div className="profile-grid"><div><small>Environment</small><strong>{customer.environment}</strong></div><div><small>Browser</small><strong>{customer.browser}</strong></div><div><small>Device</small><strong>{customer.device}</strong></div><div><small>Plan</small><strong>{customer.plan}</strong></div></div></div><div className="memory-section"><div className="memory-section-title">RELEVANT MEMORIES <span>6</span></div><div className="memory-cards"><div className="memory-item"><span className="memory-item-icon memory-item-issue"><LifeBuoy className="size-4"/></span><div><small>PREVIOUS ISSUE</small><p>{customer.memory.issue}</p></div></div><div className="memory-item"><span className="memory-item-icon memory-item-attempt"><Clock3 className="size-4"/></span><div><small>ATTEMPTED SOLUTIONS</small><p>{customer.memory.attempted}</p></div></div><div className="memory-item memory-success"><span className="memory-item-icon memory-item-success"><Check className="size-4"/></span><div><small>SUCCESSFUL SOLUTION</small><p>{customer.memory.successful}</p><span className="solution-tag"><Check className="size-3"/> Worked before</span></div></div><div className="memory-item"><span className="memory-item-icon memory-item-failed"><X className="size-4"/></span><div><small>FAILED SOLUTION</small><p>{customer.memory.failed}</p></div></div><div className="memory-item"><span className="memory-item-icon memory-item-pref"><Users className="size-4"/></span><div><small>PREFERENCE</small><p>{customer.memory.preference}</p></div></div><div className="memory-item"><span className="memory-item-icon memory-item-recurring"><Activity className="size-4"/></span><div><small>RECURRING ISSUE</small><p>{customer.memory.recurring}</p></div></div></div></div></div><div className="memory-footer"><BrainCircuit className="size-4"/><span>Powered by Hindsight Memory</span><ShieldCheck className="size-4 ml-auto"/></div></aside>; }
+function PageHeading({
+  eyebrow,
+  title,
+  description,
+  extra,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="page-heading">
+      <div>
+        <div className="eyebrow">{eyebrow}</div>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      {extra}
+    </div>
+  );
+}
+function Comparison() {
+  return (
+    <section className="comparison-section">
+      <div className="section-heading">
+        <div>
+          <span className="eyebrow">WHY MEMORY MATTERS</span>
+          <h2>The difference is remembering.</h2>
+          <p>The same customer. The same issue. A completely different experience.</p>
+        </div>
+      </div>
+      <div className="comparison-grid">
+        <div className="compare-panel compare-without">
+          <span className="compare-label">
+            <X className="size-4" /> WITHOUT MEMORY
+          </span>
+          <p>“Please tell me your operating system and what you have already tried.”</p>
+          <span className="compare-foot">Starting from scratch, every time</span>
+        </div>
+        <div className="compare-panel compare-with">
+          <span className="compare-label">
+            <BrainCircuit className="size-4" /> WITH HINDSIGHT
+          </span>
+          <p>
+            “Welcome back, Sarah. I remember you previously experienced a CSV upload crash on
+            Windows 11 using Chrome, and clearing your browser cache resolved it. Let’s try that
+            first.”
+          </p>
+          <span className="compare-foot">
+            <Check className="size-4" /> Context that actually helps
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+function MemoryPanel({ customer, expanded = false }: { customer: Customer; expanded?: boolean }) {
+  return (
+    <aside className={`memory-panel ${expanded ? "memory-expanded" : ""}`}>
+      <div className="memory-header">
+        <div className="memory-heading">
+          <span className="memory-heading-icon">
+            <BrainCircuit className="size-5" />
+          </span>
+          <span>
+            <strong>Hindsight Memory</strong>
+            <small>Customer context, in one place</small>
+          </span>
+        </div>
+        <span className="memory-active">
+          <span className="live-dot" /> ACTIVE
+        </span>
+      </div>
+      <div className="memory-scroll">
+        <div className="memory-section">
+          <div className="memory-section-title">CUSTOMER PROFILE</div>
+          <div className="memory-person">
+            {initials(customer)}
+            <span>
+              <strong>{customer.name}</strong>
+              <small>{customer.id}</small>
+            </span>
+            <span className="memory-plan">{customer.plan}</span>
+          </div>
+          <div className="profile-grid">
+            <div>
+              <small>Environment</small>
+              <strong>{customer.environment}</strong>
+            </div>
+            <div>
+              <small>Browser</small>
+              <strong>{customer.browser}</strong>
+            </div>
+            <div>
+              <small>Device</small>
+              <strong>{customer.device}</strong>
+            </div>
+            <div>
+              <small>Plan</small>
+              <strong>{customer.plan}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="memory-section">
+          <div className="memory-section-title">
+            RELEVANT MEMORIES <span>6</span>
+          </div>
+          <div className="memory-cards">
+            <div className="memory-item">
+              <span className="memory-item-icon memory-item-issue">
+                <LifeBuoy className="size-4" />
+              </span>
+              <div>
+                <small>PREVIOUS ISSUE</small>
+                <p>{customer.memory.issue}</p>
+              </div>
+            </div>
+            <div className="memory-item">
+              <span className="memory-item-icon memory-item-attempt">
+                <Clock3 className="size-4" />
+              </span>
+              <div>
+                <small>ATTEMPTED SOLUTIONS</small>
+                <p>{customer.memory.attempted}</p>
+              </div>
+            </div>
+            <div className="memory-item memory-success">
+              <span className="memory-item-icon memory-item-success">
+                <Check className="size-4" />
+              </span>
+              <div>
+                <small>SUCCESSFUL SOLUTION</small>
+                <p>{customer.memory.successful}</p>
+                <span className="solution-tag">
+                  <Check className="size-3" /> Worked before
+                </span>
+              </div>
+            </div>
+            <div className="memory-item">
+              <span className="memory-item-icon memory-item-failed">
+                <X className="size-4" />
+              </span>
+              <div>
+                <small>FAILED SOLUTION</small>
+                <p>{customer.memory.failed}</p>
+              </div>
+            </div>
+            <div className="memory-item">
+              <span className="memory-item-icon memory-item-pref">
+                <Users className="size-4" />
+              </span>
+              <div>
+                <small>PREFERENCE</small>
+                <p>{customer.memory.preference}</p>
+              </div>
+            </div>
+            <div className="memory-item">
+              <span className="memory-item-icon memory-item-recurring">
+                <Activity className="size-4" />
+              </span>
+              <div>
+                <small>RECURRING ISSUE</small>
+                <p>{customer.memory.recurring}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="memory-footer">
+        <BrainCircuit className="size-4" />
+        <span>Powered by Hindsight Memory</span>
+        <ShieldCheck className="size-4 ml-auto" />
+      </div>
+    </aside>
+  );
+}
